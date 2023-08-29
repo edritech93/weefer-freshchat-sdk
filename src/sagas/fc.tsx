@@ -5,7 +5,7 @@ import {
   FreshchatUser,
   FreshchatNotificationConfig,
 } from 'react-native-freshchat-sdk';
-import {FC_CONFIG, FC_SET_IDENTITY} from '../actions/types';
+import {DATA_RESTORE_ID, FC_CONFIG, FC_SET_IDENTITY} from '../actions/types';
 import {put, call, takeEvery, select} from 'redux-saga/effects';
 import {FcConfigType} from '../types/FcConfigType';
 import {ProfileType} from '../types/ProfileType';
@@ -15,6 +15,7 @@ import ENV from 'react-native-config';
 
 // NOTE: Freshchat config - Get Freshchat config
 const getFreshchatConfig = async () => {
+  // NOTE: response should from API
   const response: FcConfigType = {
     FreshChatAPIKey: ENV.FRESHCHAT_API_KEY || '',
     FreshChatAppId: ENV.FRESHCHAT_APP_ID || '',
@@ -70,27 +71,24 @@ const initFcNotification = async () => {
   Freshchat.setPushRegistrationToken(token);
 };
 
-// NOTE: Get Freshchat information
-const getRestoreId = async () => {
-  // return API.singleRequest(API.getFreshChatInfo())
-  //   .then((response: AxiosResponse) => response.data)
-  //   .catch((error: ShowAlertType) => {
-  //     throw error;
-  //   });
-};
-
 function* handleFreshchatConfig(_: any): any {
   try {
     const {profile} = yield select(getStateAuth);
     const payload = yield call(getFreshchatConfig);
     const isActive = yield call(initFreshchat, payload);
     if (isActive) {
+      console.log('FreshChat is isActive...');
       yield call(setUserFreshChat, profile);
       yield call(initFcNotification);
-      const resRestoreId = yield call(getRestoreId);
+
+      // NOTE: dataRestoreId should from API
+      const {dataRestoreId} = yield select(getStateDatabase);
+      const resRestoreId: FcUserType = dataRestoreId.find(
+        (e: FcUserType) => e.externalId === profile.Id,
+      );
       const bodyIdentity: FcUserType = {
         externalId: profile.Id,
-        restoreId: resRestoreId?.RestoreId ?? null,
+        restoreId: resRestoreId?.restoreId ?? null,
       };
       yield put(fcSetIdentity(bodyIdentity));
     }
@@ -105,24 +103,21 @@ export function* watchFreshchatConfigRequest() {
   yield takeEvery(FC_CONFIG.REQUEST, handleFreshchatConfig);
 }
 
-// NOTE: Update Freshchat Identity
-const updateFreshchatIdentity = async (args: FcUserType) => {
-  // const body = {RestoreId: args.restoreId};
-  // return API.singleRequest(API.updateFreshChatInfo(body))
-  //   .then((response: AxiosResponse) => response.data)
-  //   .catch((error: ShowAlertType) => {
-  //     throw error;
-  //   });
-};
-
 function* handleFreshchatIdentity(action: any): any {
   try {
     const {args} = action;
+    const {profile} = yield select(getStateAuth);
     Freshchat.identifyUser(args.externalId, args.restoreId, (error: any) =>
       _showFcError(JSON.stringify(error)),
     );
     if (args.restoreId) {
-      yield call(updateFreshchatIdentity, args);
+      // NOTE: upload restoreId is should to API
+      const dataUpload: FcUserType = {
+        externalId: profile.Id,
+        restoreId: args.restoreId,
+      };
+      console.log('Upload restoreId to API: ', dataUpload);
+      yield put({type: DATA_RESTORE_ID.CHANGE, payload: dataUpload});
     }
     yield put({type: FC_SET_IDENTITY.SUCCESS});
   } catch (error) {
@@ -137,6 +132,8 @@ export function* watchFreshchatIdentityRequest() {
 
 // NOTE: Helper Saga
 const getStateAuth = (state: any) => Object.fromEntries(state.auth.entries());
+const getStateDatabase = (state: any) =>
+  Object.fromEntries(state.database.entries());
 
 function _showFcError(message: string = '') {
   Alert.alert(

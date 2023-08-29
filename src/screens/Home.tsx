@@ -30,7 +30,6 @@ function Home(props: IHome) {
 
   useEffect(() => {
     if (fcEnabled) {
-      console.log('FreshChat is Ready...');
       Freshchat.getUnreadCountAsync((data: FcCountType) =>
         props.fcCountChange(data),
       );
