@@ -1,5 +1,12 @@
+import {
+  REQUEST,
+  SUCCESS,
+  FAILURE,
+  CHANGE,
+  CONFIG,
+  SHOW,
+} from '../constants/state';
 import {defineAction} from 'redux-define';
-import {REQUEST, SUCCESS, FAILURE, CHANGE} from '../constants/state';
 
 const appNamespace = defineAction('WEEFER_FRESHCHAT_SDK');
 
@@ -29,3 +36,5 @@ export const PROFILE_SELECT = defineAction(
   [CHANGE],
   appNamespace,
 );
+export const FC_ENV = defineAction('FC_ENV', [CONFIG], appNamespace);
+export const ALERT = defineAction('ALERT', [SHOW], appNamespace);

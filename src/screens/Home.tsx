@@ -1,26 +1,24 @@
 import React, {useEffect} from 'react';
 import {StyleSheet, View} from 'react-native';
-import {fcConfigRequest, fcCountChange, fcSetIdentity} from '../actions/fc';
+import {PrimaryButton, SecondaryButton} from '../components/Buttons';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {RootStackType} from '../types/RootStackType';
 import {Freshchat} from 'react-native-freshchat-sdk';
 import {FcCountType} from '../types/FcCountType';
-import {FcUserType} from '../types/FcUserType';
-import {Button, Text, Title} from 'react-native-paper';
-import {connect} from 'react-redux';
 import {ProfileType} from '../types/ProfileType';
-import {profileChange} from '../actions/auth';
+import {FcUserType} from '../types/FcUserType';
+import {Text, Title} from 'react-native-paper';
 
-interface IHome {
+interface IHome extends NativeStackScreenProps<RootStackType, 'Home'> {
   fcEnabled: boolean;
   profile: ProfileType;
-  dataProfile: ProfileType[];
   fcConfigRequest: () => void;
   fcCountChange: (args: FcCountType) => void;
   fcSetIdentity: (args: FcUserType) => void;
-  profileChange: (args: ProfileType) => void;
 }
 
-function Home(props: IHome) {
-  const {fcEnabled, profile, dataProfile} = props;
+export default function Home(props: IHome) {
+  const {navigation, fcEnabled, profile} = props;
 
   useEffect(() => {
     if (profile) {
@@ -59,36 +57,30 @@ function Home(props: IHome) {
     }
   }, [fcEnabled]);
 
-  const _onSwitchProfile = () => {
-    const user = dataProfile.find(e => e.Id !== profile.Id);
-    if (user) {
-      Freshchat.resetUser();
-      props.profileChange(user);
-    }
+  const _onLogout = () => {
+    Freshchat.resetUser();
+    navigation.replace('Login');
   };
 
   return (
     <View style={styles.container}>
-      <Title style={styles.textStyle}>{'Weefer Freshchat SDK'}</Title>
-      <Text style={styles.textStyle}>{`First Name: ${profile.FirstName}`}</Text>
-      <Text style={styles.textStyle}>{`Last Name: ${profile.LastName}`}</Text>
-      <Text style={styles.textStyle}>{`Email: ${profile.Email}`}</Text>
-      <Text
-        style={
-          styles.textStyle
-        }>{`Mobile Phone: +${profile.PhoneCode}${profile.Phone}`}</Text>
-      <Button
-        mode={'elevated'}
+      <Title style={styles.textStyle}>{'Profile'}</Title>
+      <Text style={styles.textStyle}>{`First Name: ${
+        profile?.FirstName ?? '-'
+      }`}</Text>
+      <Text style={styles.textStyle}>{`Last Name: ${
+        profile?.LastName ?? '-'
+      }`}</Text>
+      <Text style={styles.textStyle}>{`Email: ${profile?.Email ?? '-'}`}</Text>
+      <Text style={styles.textStyle}>{`Mobile Phone: +${
+        profile?.PhoneCode ?? ''
+      }${profile?.Phone ?? '-'}`}</Text>
+      <PrimaryButton
+        title={'Open FreshChat'}
         onPress={() => Freshchat.showConversations()}
-        style={styles.btnStyle}>
-        {'Open FreshChat'}
-      </Button>
-      <Button
-        mode={'elevated'}
-        onPress={_onSwitchProfile}
-        style={styles.btnStyle}>
-        {'Switch Profile'}
-      </Button>
+        style={styles.btnStyle}
+      />
+      <SecondaryButton title={'Logout'} onPress={_onLogout} />
     </View>
   );
 }
@@ -98,31 +90,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'cyan',
   },
   textStyle: {
-    color: 'red',
     marginBottom: 16,
   },
   btnStyle: {
     marginBottom: 24,
   },
 });
-
-const mapStateToProps = (state: any) => {
-  const {fcEnabled} = Object.fromEntries(state.fc.entries());
-  const {profile} = Object.fromEntries(state.auth.entries());
-  const {dataProfile} = Object.fromEntries(state.database.entries());
-  return {fcEnabled, profile, dataProfile};
-};
-
-const mapDispatchToProps = (dispatch: any) => {
-  return {
-    fcCountChange: (args: FcCountType) => dispatch(fcCountChange(args)),
-    fcSetIdentity: (args: FcUserType) => dispatch(fcSetIdentity(args)),
-    fcConfigRequest: () => dispatch(fcConfigRequest()),
-    profileChange: (args: ProfileType) => dispatch(profileChange(args)),
-  };
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(Home);

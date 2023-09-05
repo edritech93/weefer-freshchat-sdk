@@ -5,21 +5,30 @@ import {
   FreshchatUser,
   FreshchatNotificationConfig,
 } from 'react-native-freshchat-sdk';
-import {DATA_RESTORE_ID, FC_CONFIG, FC_SET_IDENTITY} from '../actions/types';
+import {
+  DATA_RESTORE_ID,
+  FC_CONFIG,
+  FC_ENV,
+  FC_SET_IDENTITY,
+} from '../actions/types';
 import {put, call, takeEvery, select} from 'redux-saga/effects';
+import {FcEnvConfigType} from '../types/FcEnvConfigType';
 import {FcConfigType} from '../types/FcConfigType';
 import {ProfileType} from '../types/ProfileType';
 import {FcUserType} from '../types/FcUserType';
 import {fcSetIdentity} from '../actions/fc';
-import ENV from 'react-native-config';
+import ObjStorage from '../libs/ObjStorage';
 
 // NOTE: Freshchat config - Get Freshchat config
 const getFreshchatConfig = async () => {
   // NOTE: response should from API
+  const objFcEnv: FcEnvConfigType = await ObjStorage.get(FC_ENV.CONFIG).catch(
+    () => null,
+  );
   const response: FcConfigType = {
-    FreshChatAPIKey: ENV.FRESHCHAT_API_KEY || '',
-    FreshChatAppId: ENV.FRESHCHAT_APP_ID || '',
-    HelpdeskWebViewURL: ENV.DOMAIN || '',
+    FreshChatAPIKey: objFcEnv?.fcApiKey ?? '',
+    FreshChatAppId: objFcEnv?.fcAppId ?? '',
+    HelpdeskWebViewURL: objFcEnv?.fcDomain ?? '',
   };
   return response;
 };
@@ -75,6 +84,7 @@ function* handleFreshchatConfig(_: any): any {
   try {
     const {profile} = yield select(getStateAuth);
     const payload = yield call(getFreshchatConfig);
+    console.log('payload => ', payload);
     const isActive = yield call(initFreshchat, payload);
     if (isActive) {
       console.log('FreshChat is isActive...');

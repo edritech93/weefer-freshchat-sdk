@@ -3,7 +3,7 @@ import {SafeAreaView, StyleSheet, ActivityIndicator} from 'react-native';
 import {PersistGate} from 'redux-persist/integration/react';
 import {Provider} from 'react-redux';
 import configureStore from './libs/configureStore';
-import Home from './screens/Home';
+import StackNavigation from './Router';
 
 const {store, persistor} = configureStore();
 
@@ -12,7 +12,7 @@ export default function App() {
     <SafeAreaView style={styles.flex1}>
       <Provider store={store}>
         <PersistGate loading={<ActivityIndicator />} persistor={persistor}>
-          <Home />
+          <StackNavigation />
         </PersistGate>
       </Provider>
     </SafeAreaView>

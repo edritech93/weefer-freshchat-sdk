@@ -5,4 +5,5 @@ export type ProfileType = {
   Email: string;
   PhoneCode: string;
   Phone: string;
+  Password: string;
 };
